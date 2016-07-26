@@ -1,6 +1,6 @@
 // Copyright (c) 2016, huangjunwei <huangjunwei@youmi.net>. All rights reserved.
 
-package uuid
+package members
 
 import (
 	"crypto/rand"
