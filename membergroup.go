@@ -7,18 +7,18 @@ package membergroup
 
 // MemberGroup groups of members in cluster
 type MemberGroup struct {
-	members []*Member
+	// key: uid
+	members map[int64]*Member
 }
 
 // Create create a member group
 func Create() (group *MemberGroup) {
 	group = new(MemberGroup)
-	group.members = make([]*Member, 0)
+	group.members = make(map[int64]*Member)
 
 	// 将自身加入到组中
 	own := NewMember()
-
-	group.members = append(group.members, own)
+	group.members[own.UID()] = own
 
 	return group
 }

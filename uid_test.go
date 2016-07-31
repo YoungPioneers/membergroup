@@ -7,7 +7,7 @@ import (
 )
 
 func TestUid(t *testing.T) {
-	uid := NewUid()
+	uid := NewUID()
 
 	// first bit must be 0
 	if uid>>63 != 0 {

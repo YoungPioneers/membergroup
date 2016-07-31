@@ -12,14 +12,14 @@ import (
 // We generate unique id for each instance base on twitter's snow flake
 
 const (
-	// UidSignBits 1 bit for sign
-	UidSignBits = 1
-	// UidTimeBits 41 bits for milliseconds since custom epoch
-	UidTimeBits = 41
-	// UidWorkerBits 4 bits for worker id
-	UidWorkerBits = 6
-	// UidSeqBits 10 bits for sequence number
-	UidSeqBits = 16
+	// UIDSignBits 1 bit for sign
+	UIDSignBits = 1
+	// UIDTimeBits 41 bits for milliseconds since custom epoch
+	UIDTimeBits = 41
+	// UIDWorkerBits 4 bits for worker id
+	UIDWorkerBits = 6
+	// UIDSeqBits 10 bits for sequence number
+	UIDSeqBits = 16
 )
 
 // randomize bytes
@@ -32,7 +32,7 @@ func timeStamp() int64 {
 	ts := time.Now().Unix()
 
 	// reserve 41 bits
-	ts = ts & (1<<UidTimeBits - 1)
+	ts = ts & (1<<UIDTimeBits - 1)
 	return ts
 }
 
@@ -56,25 +56,25 @@ func workID() int64 {
 
 	workID = int64(binary.BigEndian.Uint64(bytes))
 	// reserve 10 bits
-	workID = workID & (1<<UidWorkerBits - 1)
+	workID = workID & (1<<UIDWorkerBits - 1)
 
 	return workID
 }
 
 // sequence id
 func sequence() int64 {
-	bytes := make([]byte, UidSeqBits)
+	bytes := make([]byte, UIDSeqBits)
 	random(bytes)
 	// reserve 10 bits
-	return int64(binary.BigEndian.Uint64(bytes)) & (1<<UidSeqBits - 1)
+	return int64(binary.BigEndian.Uint64(bytes)) & (1<<UIDSeqBits - 1)
 }
 
-// NewUid get an uniq id
-func NewUid() int64 {
+// NewUID get an uniq id
+func NewUID() int64 {
 	var uid int64
 	uid = uid | timeStamp()
-	uid = (uid << UidWorkerBits) | workID()
-	uid = (uid << UidSeqBits) | sequence()
+	uid = (uid << UIDWorkerBits) | workID()
+	uid = (uid << UIDSeqBits) | sequence()
 
 	return uid
 }
