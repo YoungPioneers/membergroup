@@ -6,10 +6,12 @@ package membergroup
 // Each instance may contain propagate serveral client and one server.
 
 const (
-	// DefaultConnectTimeout 500 millisecond for connection timeout
-	DefaultConnectTimeout = 500
+	// DefaultRTT 2 millisecond for rtt
+	DefaultRTT = 2
+	// DefaultConnectTimeout 10 millisecond for connection timeout
+	DefaultConnectTimeout = 10
 	// DefaultSpeakTimeout 100 millisecond waiting for speak response
-	DefaultSpeakTimeout = 100
+	DefaultSpeakTimeout = 5
 	// DefaultHeartBeatInterval send heart beat every 1000 millisecond
 	DefaultHeartBeatInterval = 1000
 
