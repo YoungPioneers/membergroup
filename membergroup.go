@@ -22,3 +22,8 @@ func Create() (group *MemberGroup) {
 
 	return group
 }
+
+// Join join a member group
+func (member *MemberGroup) Join(err error) {
+	return
+}

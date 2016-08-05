@@ -22,8 +22,8 @@ func (udpTalk *UDPTalk) init() {
 	udpTalk.speakingNerve = make(chan []byte, DefaultNerveBuffer)
 }
 
-// SpeakTo implement of speak to
-func (udpTalk *UDPTalk) SpeakTo(member *Member, messages []byte) (echo []byte, err error) {
+// Gossip implement of speak to
+func (udpTalk *UDPTalk) Gossip(member *Member, messages []byte) (echo []byte, err error) {
 	return
 }
 

@@ -36,8 +36,8 @@ func (tcpTalk *TCPTalk) init() {
 	tcpTalk.speakingNerve = make(chan []byte, DefaultNerveBuffer)
 }
 
-// SpeakTo implement of speak to
-func (tcpTalk *TCPTalk) SpeakTo(member *Member, messages []byte) (echo []byte, err error) {
+// Gossip implement of speak to
+func (tcpTalk *TCPTalk) Gossip(member *Member, messages []byte) (echo []byte, err error) {
 	return
 }
 
