@@ -1,0 +1,33 @@
+// Copyright (c) 2016, huangjunwei <huangjunwei@youmi.net>. All rights reserved.
+
+syntax = 'proto3';
+
+package membergroup;
+
+enum MessageType {
+	PingMessage = 0;
+	PingReqMessage = 1;
+
+	JoinMessage = 2;
+	LeftMessage = 3;
+	FullMembersMessage = 4;
+};
+
+enum NodeStatus {
+	MemberAlive = 0;
+	MemberSuspect = 1;
+	MemberDead = 2;
+};
+
+message Node {
+	uint64 uid = 1;
+	uint64 ip = 2;
+	uint32 port = 3;
+	NodeStatus status = 4;
+};
+
+message Message {
+	MessageType messageType = 1;
+	repeated Node source = 2;
+	Node target = 3;
+};

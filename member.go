@@ -25,7 +25,7 @@ type Member struct {
 	// ipv4
 	ip string
 	// all members should use an uniform port for communications
-	port uint16
+	port uint32
 
 	// member status
 	status MemberStateType
@@ -61,7 +61,7 @@ func (member *Member) IP() string {
 }
 
 // Port return the port
-func (member *Member) Port() uint16 {
+func (member *Member) Port() uint32 {
 	member.lock.RLock()
 	defer member.lock.RUnlock()
 	return member.port

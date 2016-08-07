@@ -23,7 +23,12 @@ func Create() (group *MemberGroup) {
 	return group
 }
 
+// Members return members
+func (membergroup *MemberGroup) Members() map[int64]*Member {
+	return membergroup.members
+}
+
 // Join join a member group
-func (member *MemberGroup) Join(err error) {
+func (membergroup *MemberGroup) Join(err error) {
 	return
 }

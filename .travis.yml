@@ -7,6 +7,7 @@ go:
         - 1.5
         - 1.6
         - tip
+
 install:
         - go get github.com/golang/lint/golint
         - go get github.com/jgautheron/goconst/cmd/goconst
@@ -18,7 +19,7 @@ script:
         - $HOME/gopath/bin/goveralls -service=travis-ci
         - test -z "$(go fmt ./...)"
         - test -z "$(go vet ./...)"
-        - test -z "$(golint)"
+        # - test -z "$(golint)"
         - test -z "$(goconst .)"
         - test -z "$(unconvert -v .)"
         - go test -test.v .
