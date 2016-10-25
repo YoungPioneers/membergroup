@@ -11,6 +11,8 @@ enum MessageType {
 	JoinMessage = 2;
 	LeftMessage = 3;
 	FullMembersMessage = 4;
+
+	GossipMessage = 5;
 };
 
 enum NodeStatus {

@@ -14,20 +14,16 @@ type TCPTalk struct {
 	// lock .
 	lock *sync.RWMutex
 
-	// members
-	own     *Member
-	members *MemberGroup
-
-	// heartbeat interval
-	interval int64
-
 	// timeout
 	connectTimeout int64
 	speakTimeout   int64
 
-	// nerves are channels transferring information in/out brain
+	// nerves
 	hearingNerve  chan []byte
 	speakingNerve chan []byte
+
+	// status
+	hearing bool
 
 	// closed sign of closed
 	closed bool
@@ -35,92 +31,87 @@ type TCPTalk struct {
 	closeChn chan bool
 }
 
-// initialization
-func (tcpTalk *TCPTalk) init(own *Member) {
+// init initialization linking hearingNerve and speakingNerve
+func (tcpTalk *TCPTalk) init(own *Member, hearingNerve, speakingNerve chan []byte) (err error) {
+	fmt.Println("tcp talk init")
 	// lock
 	tcpTalk.lock = new(sync.RWMutex)
-
-	// heartbeat
-	tcpTalk.interval = DefaultHeartBeatInterval
 
 	// timeout
 	tcpTalk.connectTimeout = DefaultConnectTimeout
 	tcpTalk.speakTimeout = DefaultSpeakTimeout
 
 	// nerve
-	tcpTalk.hearingNerve = make(chan []byte, DefaultNerveBuffer)
-	tcpTalk.speakingNerve = make(chan []byte, DefaultNerveBuffer)
+	tcpTalk.hearingNerve = hearingNerve
+	tcpTalk.speakingNerve = speakingNerve
 
-	tcpTalk.own = own
+	// status
+	tcpTalk.hearing = false
 
 	tcpTalk.closed = false
 	tcpTalk.closeChn = make(chan bool)
 
 	// begin to run
-	go tcpTalk.Brain()
 	go tcpTalk.Ear()
-	go tcpTalk.Mouse()
-}
 
-// Gossip implement of speak to
-func (tcpTalk *TCPTalk) Gossip(member *Member, messages []byte) (echo []byte, err error) {
-	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", member.IP(), member.Port()))
-	conn, _ := net.DialTCP("tcp", nil, tcpAddr)
-	defer conn.Close()
-	fmt.Println("connected!")
-
-	reader := bufio.NewReader(conn)
-	echo, err = reader.ReadBytes(TalkDelimeter)
-	if nil != err {
-		return
+	for !tcpTalk.Hearing() {
 	}
 
 	return
 }
 
-// Brain implement of brain
-func (tcpTalk *TCPTalk) Brain() (err error) {
-	for {
-		select {
-		case bytes := <-tcpTalk.hearingNerve:
-			// brain think abount things from hearing nerve
-			// then output to speaking nerve
-			var heardMessage Message
-			err := decode(bytes, heardMessage)
-			if nil != err {
-				continue
-			}
-
-			// some logic work of brain
-			gossipMessage := heardMessage
-			gossipBytes, err := encode(gossipMessage)
-			if nil != err {
-				continue
-			}
-
-			tcpTalk.speakingNerve <- gossipBytes
-		}
+// Gossip implement of speak to
+func (tcpTalk *TCPTalk) Gossip(ip string, port uint32, message []byte) (echo []byte, err error) {
+	fmt.Printf("Gossip to %s, message: %s\n", fmt.Sprintf("%s:%d", ip, port), message)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", ip, port))
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if nil != err {
+		fmt.Println(err.Error())
+		return nil, err
 	}
+
+	defer conn.Close()
+	fmt.Println("connected!")
+
+	conn.Write(message)
+	conn.Write([]byte{TalkDelimeter})
+	fmt.Printf("write message: %s\n", message)
+
+	reader := bufio.NewReader(conn)
+	echo, err = reader.ReadBytes(TalkDelimeter)
+	if nil != err {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	fmt.Printf("%s\n", echo)
+
+	return echo, err
 }
 
 // Ear implement of ear
 func (tcpTalk *TCPTalk) Ear() (err error) {
+
 	// run a tcp server to receive messages
-	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", tcpTalk.own.IP(), tcpTalk.own.Port()))
+	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", "0.0.0.0", DefaultPort))
 	if nil != err {
+		fmt.Println(err.Error())
 		return
 	}
 
 	tcpListener, err := net.ListenTCP("tcp", tcpAddr)
 	if nil != err {
+		fmt.Println(err.Error())
 		return
 	}
 	defer tcpListener.Close()
 
+	fmt.Println("ear is hearing")
+	tcpTalk.hearing = true
 EarLoop:
 	for {
 		tcpConn, err := tcpListener.AcceptTCP()
 		if nil != err {
+			fmt.Println(err.Error())
 			continue
 		}
 		fmt.Println("A client connected : " + tcpConn.RemoteAddr().String())
@@ -131,6 +122,7 @@ EarLoop:
 
 		err = tcpTalk.Hear(tcpConn)
 		if nil != err {
+			fmt.Println(err.Error())
 			continue
 		}
 	}
@@ -140,41 +132,26 @@ EarLoop:
 
 // Hear implement of hear
 func (tcpTalk *TCPTalk) Hear(tcpConn *net.TCPConn) (err error) {
+	fmt.Println("let me hear")
 	reader := bufio.NewReader(tcpConn)
 	bytes, err := reader.ReadBytes(TalkDelimeter)
 	if nil != err {
 		// response remote
+		fmt.Println("hear fail")
 		tcpConn.Write([]byte(TalkFailResponse))
+		tcpConn.Write([]byte{TalkDelimeter})
 		return
 	}
+	fmt.Printf("hear success, %s", bytes)
 
 	// response remote
 	tcpConn.Write([]byte(TalkSuccessResponse))
+	tcpConn.Write([]byte{TalkDelimeter})
 
 	// notify my brain
 	tcpTalk.hearingNerve <- bytes
 	tcpConn.Close()
 
-	return
-}
-
-// Mouse implement of mouse
-func (tcpTalk *TCPTalk) Mouse() (err error) {
-MouseLoop:
-	for {
-		select {
-		case bytes := <-tcpTalk.speakingNerve:
-			// mouse gossip to other
-			member := &Member{}
-			echo, err := tcpTalk.Gossip(member, bytes)
-			if nil != err {
-				continue
-			}
-			tcpTalk.hearingNerve <- echo
-		case <-tcpTalk.closeChn:
-			break MouseLoop
-		}
-	}
 	return
 }
 
@@ -203,5 +180,16 @@ func (tcpTalk *TCPTalk) Close() (err error) {
 
 // Closed closed
 func (tcpTalk *TCPTalk) Closed() bool {
+	tcpTalk.lock.RLock()
+	defer tcpTalk.lock.RUnlock()
+
 	return tcpTalk.closed
+}
+
+// Hearing .
+func (tcpTalk *TCPTalk) Hearing() bool {
+	tcpTalk.lock.RLock()
+	defer tcpTalk.lock.RUnlock()
+
+	return tcpTalk.hearing
 }

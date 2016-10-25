@@ -7,10 +7,16 @@ package membergroup
 
 import (
 	"errors"
-	"net"
 )
 
+type TalkType int
+
 const (
+	// TCPTalkType tcp
+	TCPTalkType TalkType = iota
+	// UDPTalkType udp
+	UDPTalkType
+
 	// DefaultRTT 2 millisecond for rtt, suspected timeout maybe 3 * RTT
 	DefaultRTT = 2
 	// DefaultK choose k members in every gossip, depends on group size
@@ -27,32 +33,31 @@ const (
 	DefaultNerveBuffer = 1024
 
 	// TalkDelimeter delimeter for talking protocol
-	TalkDelimeter = '\n'
+	TalkDelimeter byte = '\n'
 	// TalkSuccessResponse response for success
-	TalkSuccessResponse = "1"
+	TalkSuccessResponse string = "1"
 	// TalkFailResponse response for failure
-	TalkFailResponse = "0"
+	TalkFailResponse string = "0"
 )
 
 var (
-	ErrTalkAlreadyClosed = errors.New("Talk had already closed")
+	ErrTalkTypeNotDefined = errors.New("Talk type not defined")
+	ErrTalkAlreadyClosed  = errors.New("Talk had already closed")
 )
 
 // Talk is base of propagation
 type Talk interface {
 	// TODO echo use an struct
+	// init  initialization linking hearingNerve and speakingNerve
+	init(own *Member, hearingNerve, speakingNerve chan []byte) (err error)
 	// Gossip spread information to others
-	Gossip(member *Member, messages []byte) (echo []byte, err error)
-	// Brain deal with messages heard from others and control speaks to others
-	Brain() (err error)
+	Gossip(ip string, port uint32, messages []byte) (echo []byte, err error)
 	// Ear listen information from others
 	Ear() (err error)
 	// Hear receives information from ear
-	Hear(*net.TCPConn) (err error)
-	// Mouse speak to others
-	Mouse() (err error)
+	//Hear(*net.TCPConn) (err error)
 	// Detection failure detection
-	Dection() (err error)
+	//Dection() (err error)
 	// Ping .
 	Ping(member *Member) (echo []byte, err error)
 	// PingReq ask others to ping

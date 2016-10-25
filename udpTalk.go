@@ -23,7 +23,7 @@ type UDPTalk struct {
 }
 
 // initialization
-func (udpTalk *UDPTalk) init() {
+func (udpTalk *UDPTalk) init(own *Member, hearingNerve, speakingNerve chan []byte) (err error) {
 	// lock
 	udpTalk.lock = new(sync.RWMutex)
 
@@ -35,20 +35,13 @@ func (udpTalk *UDPTalk) init() {
 	udpTalk.speakingNerve = make(chan []byte, DefaultNerveBuffer)
 
 	udpTalk.closed = false
-
-	// begin to run
-	go udpTalk.Brain()
 	go udpTalk.Ear()
-	go udpTalk.Mouse()
-}
 
-// Gossip implement of speak to
-func (udpTalk *UDPTalk) Gossip(member *Member, messages []byte) (echo []byte, err error) {
 	return
 }
 
-// Brain implement of brain
-func (udpTalk *UDPTalk) Brain() (err error) {
+// Gossip implement of speak to
+func (udpTalk *UDPTalk) Gossip(ip string, port uint32, messages []byte) (echo []byte, err error) {
 	return
 }
 
@@ -59,11 +52,6 @@ func (udpTalk *UDPTalk) Ear() (err error) {
 
 // Hear implement of hear
 func (udpTalk *UDPTalk) Hear() (err error) {
-	return
-}
-
-// Mouse implement of mouse
-func (udpTalk *UDPTalk) Mouse() (err error) {
 	return
 }
 
