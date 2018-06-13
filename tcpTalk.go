@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net"
 	"sync"
+
+	log "github.com/YoungPioneers/blog4go"
 )
 
 // TCPTalk propagate with tcp protocol
@@ -17,6 +19,9 @@ type TCPTalk struct {
 	// timeout
 	connectTimeout int64
 	speakTimeout   int64
+
+	// port
+	hearingPort uint32
 
 	// nerves
 	hearingNerve  chan []byte
@@ -32,14 +37,17 @@ type TCPTalk struct {
 }
 
 // init initialization linking hearingNerve and speakingNerve
-func (tcpTalk *TCPTalk) init(own *Member, hearingNerve, speakingNerve chan []byte) (err error) {
-	fmt.Println("tcp talk init")
+func (tcpTalk *TCPTalk) init(own *Member, hearingPort uint32, hearingNerve, speakingNerve chan []byte) (err error) {
+	log.Debug("tcp talk init")
 	// lock
 	tcpTalk.lock = new(sync.RWMutex)
 
 	// timeout
 	tcpTalk.connectTimeout = DefaultConnectTimeout
 	tcpTalk.speakTimeout = DefaultSpeakTimeout
+
+	// port
+	tcpTalk.hearingPort = hearingPort
 
 	// nerve
 	tcpTalk.hearingNerve = hearingNerve
@@ -62,7 +70,8 @@ func (tcpTalk *TCPTalk) init(own *Member, hearingNerve, speakingNerve chan []byt
 
 // Gossip implement of speak to
 func (tcpTalk *TCPTalk) Gossip(ip string, port uint32, message []byte) (echo []byte, err error) {
-	fmt.Printf("Gossip to %s, message: %s\n", fmt.Sprintf("%s:%d", ip, port), message)
+	log.Debugf("Gossip to %s:%d, message: %s\n", ip, port, message)
+
 	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", ip, port))
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if nil != err {
@@ -71,50 +80,51 @@ func (tcpTalk *TCPTalk) Gossip(ip string, port uint32, message []byte) (echo []b
 	}
 
 	defer conn.Close()
-	fmt.Println("connected!")
+	log.Debug("connected!")
 
 	conn.Write(message)
 	conn.Write([]byte{TalkDelimeter})
-	fmt.Printf("write message: %s\n", message)
+	log.Debugf("write message: %s", message)
 
 	reader := bufio.NewReader(conn)
 	echo, err = reader.ReadBytes(TalkDelimeter)
 	if nil != err {
-		fmt.Println(err.Error())
+		log.Error(err.Error())
 		return nil, err
 	}
-	fmt.Printf("%s\n", echo)
+	log.Debugf("echo: %s", echo)
 
 	return echo, err
 }
 
 // Ear implement of ear
 func (tcpTalk *TCPTalk) Ear() (err error) {
-
 	// run a tcp server to receive messages
-	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", "0.0.0.0", DefaultPort))
+	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", "0.0.0.0", tcpTalk.hearingPort))
 	if nil != err {
-		fmt.Println(err.Error())
+		log.Error(err.Error())
 		return
 	}
 
 	tcpListener, err := net.ListenTCP("tcp", tcpAddr)
 	if nil != err {
-		fmt.Println(err.Error())
+		log.Error(err.Error())
 		return
 	}
 	defer tcpListener.Close()
 
-	fmt.Println("ear is hearing")
+	log.Debug("ear is hearing")
+	tcpTalk.lock.Lock()
 	tcpTalk.hearing = true
+	tcpTalk.lock.Unlock()
 EarLoop:
 	for {
 		tcpConn, err := tcpListener.AcceptTCP()
 		if nil != err {
-			fmt.Println(err.Error())
+			log.Error(err.Error())
 			continue
 		}
-		fmt.Println("A client connected : " + tcpConn.RemoteAddr().String())
+		log.Debugf("A client connected: %s", tcpConn.RemoteAddr().String())
 
 		if tcpTalk.Closed() {
 			break EarLoop
@@ -122,7 +132,7 @@ EarLoop:
 
 		err = tcpTalk.Hear(tcpConn)
 		if nil != err {
-			fmt.Println(err.Error())
+			log.Error(err.Error())
 			continue
 		}
 	}
@@ -132,17 +142,17 @@ EarLoop:
 
 // Hear implement of hear
 func (tcpTalk *TCPTalk) Hear(tcpConn *net.TCPConn) (err error) {
-	fmt.Println("let me hear")
+	log.Debug("let me hear")
 	reader := bufio.NewReader(tcpConn)
 	bytes, err := reader.ReadBytes(TalkDelimeter)
 	if nil != err {
 		// response remote
-		fmt.Println("hear fail")
+		log.Errorf("hear fail. err: %s", err.Error())
 		tcpConn.Write([]byte(TalkFailResponse))
 		tcpConn.Write([]byte{TalkDelimeter})
 		return
 	}
-	fmt.Printf("hear success, %s", bytes)
+	log.Debugf("hear success, %s", bytes)
 
 	// response remote
 	tcpConn.Write([]byte(TalkSuccessResponse))

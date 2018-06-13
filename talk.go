@@ -49,7 +49,7 @@ var (
 type Talk interface {
 	// TODO echo use an struct
 	// init  initialization linking hearingNerve and speakingNerve
-	init(own *Member, hearingNerve, speakingNerve chan []byte) (err error)
+	init(own *Member, hearingPort uint32, hearingNerve, speakingNerve chan []byte) (err error)
 	// Gossip spread information to others
 	Gossip(ip string, port uint32, messages []byte) (echo []byte, err error)
 	// Ear listen information from others

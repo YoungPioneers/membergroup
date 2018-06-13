@@ -4,7 +4,14 @@ package membergroup
 
 import (
 	"sync"
+
+	log "github.com/YoungPioneers/blog4go"
 )
+
+func init() {
+	// initialize logger
+	log.NewConsoleWriter(true)
+}
 
 // MemberStateType type of member state
 type MemberStateType int
@@ -70,7 +77,7 @@ func NewMember(talkType TalkType, ip string, port uint32) (member *Member, err e
 	default:
 		return nil, ErrTalkTypeNotDefined
 	}
-	err = member.talk.init(member, member.hearingNerve, member.speakingNerve)
+	err = member.talk.init(member, port, member.hearingNerve, member.speakingNerve)
 
 	// heartbeat
 	member.interval = DefaultHeartBeatInterval

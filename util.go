@@ -10,7 +10,6 @@ import (
 
 // getLocalIP .
 func getLocalIP() (ip string) {
-	//addrs, err := net.InterfaceAddrs()
 	interfaces, err := net.Interfaces()
 	if nil != err {
 		return ""
@@ -42,5 +41,5 @@ func getLocalIP() (ip string) {
 
 // interfaceNameFilter .
 func interfaceNameFilter(name string) bool {
-	return strings.HasPrefix(name, "eth") || strings.HasPrefix(name, "en")
+	return strings.HasPrefix(name, "eth") || strings.HasPrefix(name, "ens")
 }

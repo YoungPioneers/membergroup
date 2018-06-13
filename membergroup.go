@@ -6,7 +6,6 @@
 package membergroup
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -20,13 +19,13 @@ type MemberGroup struct {
 }
 
 // Create create a member group
-func Create(talkType TalkType) (group *MemberGroup, err error) {
+func Create(talkType TalkType, hearingPort uint32) (group *MemberGroup, err error) {
 	group = new(MemberGroup)
 	group.members = make(map[int64]*Member)
 
 	// 将自身加入到组中
 	ip := getLocalIP()
-	group.own, err = NewMember(talkType, ip, DefaultPort)
+	group.own, err = NewMember(talkType, ip, hearingPort)
 	if nil != err {
 		return nil, err
 	}
@@ -52,12 +51,10 @@ func (membergroup *MemberGroup) setMembers(members map[int64]*Member) {
 }
 
 // Join join a member group
-func (membergroup *MemberGroup) Join(addrs []string) error {
-	for _, addr := range addrs {
-		fmt.Printf("Join %s\n", addr)
-		membergroup.own.talk.Gossip(addr, DefaultPort, []byte("hello"))
-	}
-	return nil
+func (membergroup *MemberGroup) Join(addr string, port uint32) error {
+	byts, _ := encode(Message{})
+	_, err := membergroup.own.talk.Gossip(addr, port, byts)
+	return err
 }
 
 // Broadcast broadcase message among its member group

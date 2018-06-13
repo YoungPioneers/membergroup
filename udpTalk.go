@@ -14,6 +14,9 @@ type UDPTalk struct {
 	// heart beat interval
 	interval int64
 
+	// port
+	hearingPort uint32
+
 	// nerves are channels transferring information in/out brain
 	hearingNerve  chan []byte
 	speakingNerve chan []byte
@@ -23,12 +26,15 @@ type UDPTalk struct {
 }
 
 // initialization
-func (udpTalk *UDPTalk) init(own *Member, hearingNerve, speakingNerve chan []byte) (err error) {
+func (udpTalk *UDPTalk) init(own *Member, hearingPort uint32, hearingNerve, speakingNerve chan []byte) (err error) {
 	// lock
 	udpTalk.lock = new(sync.RWMutex)
 
 	// heartbeat
 	udpTalk.interval = DefaultHeartBeatInterval
+
+	// port
+	udpTalk.hearingPort = hearingPort
 
 	// nerve
 	udpTalk.hearingNerve = make(chan []byte, DefaultNerveBuffer)
